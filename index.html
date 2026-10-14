@@ -1,0 +1,16 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ARTEX · Orca 연결</title>
+<style>body{font:16px system-ui;background:#f3f5f8;color:#17253b;max-width:900px;margin:40px auto;padding:20px}section{background:white;border:1px solid #dde3ed;border-radius:14px;padding:24px;margin:16px 0}button,input{font:inherit;padding:10px 14px;margin:5px;border:1px solid #bac5d6;border-radius:7px}button{cursor:pointer;background:#eaf1fb}button:disabled{opacity:.5}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f9fc;padding:16px}h1{font-size:28px}.note{color:#52657f}a{color:#1455ae}</style>
+<h1>ARTEX · Orca 연결</h1><p class="note">Orca에서 사용 중인 Codex 로그인으로 AI 요청을 처리합니다. 계정 토큰을 복사하지 않습니다.</p>
+<section><h2>1. ARTEX 로그인</h2><p>기존 ARTEX 관리자 비밀번호를 사용하세요. 같은 브라우저에서 이미 로그인했다면 다시 입력할 필요가 없습니다.</p><input id="password" type="password" autocomplete="current-password" placeholder="ARTEX 관리자 비밀번호"><button id="login">로그인</button><span id="auth"></span></section>
+<section><h2>2. AI 연결</h2><p>연결 활성화는 LLM 프로파일을 추가·선택합니다. 작업을 자동으로 시작하지 않습니다.</p><button id="status">연결 상태 확인</button><button id="configure">Orca Codex 연결 활성화</button><p class="note">텍스트와 도구 호출을 지원합니다. 이미지는 지원하지 않습니다. 구독 사용량 제한이 적용되며, 응답은 완성된 뒤 전달됩니다.</p></section>
+<section><h2>3. ARTEX 조작</h2><button id="tasks">작업 조회</button><button id="findings">발견 조회</button><input id="taskId" inputmode="numeric" placeholder="중단할 작업 ID"><button id="pause">작업 일시정지</button><p><a href="/dashboard/">대시보드</a> · <a href="/system/llm/">LLM 설정</a> · <a href="/function/tasks/">전체 작업 관리</a></p></section>
+<section><h2>결과</h2><pre id="result" aria-live="polite">연결 상태 확인을 누르세요.</pre></section>
+<script>
+const result=document.getElementById('result'),auth=document.getElementById('auth');
+function token(){return localStorage.getItem('artex_token')||'';}function authText(){auth.textContent=token()?'로그인 정보 있음':'로그인 필요';}authText();
+async function request(route,body){result.textContent='처리 중…';const response=await fetch('/orca/'+route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(token()?{Authorization:'Bearer '+token()}:{})},body:body===undefined?undefined:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(typeof data.error==='string'?data.error:data.error?.message||'요청 실패');return data;}
+async function run(button,fn){button.disabled=true;try{result.textContent=JSON.stringify(await fn(),null,2);}catch(e){result.textContent=e.message;}finally{button.disabled=false;authText();}}
+document.getElementById('login').onclick=function(){run(this,async()=>{const password=document.getElementById('password');const data=await request('login',{password:password.value});password.value='';localStorage.setItem('artex_token',data.token);document.cookie='artex_token='+encodeURIComponent(data.token)+'; path=/; SameSite=Lax';return {ok:true,message:'로그인 완료'};});};
+for(const route of ['status','configure','tasks','findings'])document.getElementById(route).onclick=function(){run(this,()=>request(route,route==='configure'?{}:undefined));};
+document.getElementById('pause').onclick=function(){run(this,()=>request('pause',{id:document.getElementById('taskId').value.trim()}));};
+</script></html>

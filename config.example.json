@@ -1,0 +1,9 @@
+{
+  "port": 8792,
+  "gatewayKey": "REPLACE_WITH_A_UNIQUE_64_CHARACTER_HEX_KEY",
+  "timeoutMs": 120000,
+  "codex": "codex",
+  "orca": "orca",
+  "accountRoot": "%APPDATA%\\orca\\codex-accounts",
+  "maxConcurrentCalls": 2
+}
